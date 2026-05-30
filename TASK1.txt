@@ -1,0 +1,81 @@
+# Titanic Survival Prediction
+
+# Import Libraries
+import pandas as pd
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+# Load Dataset
+data = pd.read_csv("Titanic-Dataset.csv")
+
+# Display Dataset Information
+print("Dataset Shape:", data.shape)
+print(data.head())
+
+# Handle Missing Values
+age_imputer = SimpleImputer(strategy='mean')
+data['Age'] = age_imputer.fit_transform(data[['Age']])
+
+fare_imputer = SimpleImputer(strategy='mean')
+data['Fare'] = fare_imputer.fit_transform(data[['Fare']])
+
+# Fill missing Embarked values
+data['Embarked'] = data['Embarked'].fillna(data['Embarked'].mode()[0])
+
+# Drop Cabin column (many missing values)
+if 'Cabin' in data.columns:
+    data.drop('Cabin', axis=1, inplace=True)
+
+# Encode Categorical Columns
+label_encoder = LabelEncoder()
+
+data['Sex'] = label_encoder.fit_transform(data['Sex'])
+data['Embarked'] = label_encoder.fit_transform(data['Embarked'])
+
+# Select Features
+X = data[['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']]
+
+# Target Variable
+y = data['Survived']
+
+# Split Dataset
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=0.2,
+    random_state=42
+)
+
+# Train Model
+model = RandomForestClassifier(
+    n_estimators=100,
+    random_state=42
+)
+
+model.fit(X_train, y_train)
+
+# Predictions
+y_pred = model.predict(X_test)
+
+# Evaluation
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+print("\nAccuracy Score:")
+print(accuracy_score(y_test, y_pred))
+
+# Example Prediction
+sample_passenger = [[3, 1, 25, 0, 0, 7.25, 2]]
+prediction = model.predict(sample_passenger)
+
+if prediction[0] == 1:
+    print("\nPassenger Predicted: Survived")
+else:
+    print("\nPassenger Predicted: Did Not Survive")
