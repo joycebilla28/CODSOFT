@@ -1,0 +1,72 @@
+# Credit Card Fraud Detection
+
+# Import Libraries
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.ensemble import RandomForestClassifier
+from imblearn.over_sampling import SMOTE
+
+# Load Dataset
+data = pd.read_csv("creditcard.csv")
+
+# Display Dataset Information
+print("Dataset Shape:", data.shape)
+print(data.head())
+
+# Feature Scaling
+scaler = StandardScaler()
+data['Amount'] = scaler.fit_transform(data[['Amount']])
+
+# Features and Target
+X = data.drop('Class', axis=1)
+y = data['Class']
+
+# Check Class Distribution
+print("\nOriginal Class Distribution:")
+print(y.value_counts())
+
+# Handle Class Imbalance using SMOTE
+smote = SMOTE(random_state=42)
+X_resampled, y_resampled = smote.fit_resample(X, y)
+
+print("\nAfter SMOTE Class Distribution:")
+print(y_resampled.value_counts())
+
+# Split Data into Training and Testing Sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X_resampled,
+    y_resampled,
+    test_size=0.2,
+    random_state=42,
+    stratify=y_resampled
+)
+
+# Train Random Forest Model
+rf_model = RandomForestClassifier(
+    n_estimators=100,
+    random_state=42
+)
+
+rf_model.fit(X_train, y_train)
+
+# Predictions
+y_pred = rf_model.predict(X_test)
+
+# Evaluation
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+print("\nAccuracy Score:")
+print(accuracy_score(y_test, y_pred))
+
+# Precision, Recall and F1 Score
+report = classification_report(y_test, y_pred, output_dict=True)
+
+print("\nPrecision:", report['1']['precision'])
+print("Recall:", report['1']['recall'])
+print("F1-Score:", report['1']['f1-score'])
